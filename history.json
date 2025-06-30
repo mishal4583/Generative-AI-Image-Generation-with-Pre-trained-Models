@@ -1,0 +1,62 @@
+[
+    {
+        "model": "Realisian",
+        "prompt": "\"A mist-drenched rainforest at twilight, where towering dipterocarp trees form a vaulted canopy 100 meters high, their trunks draped in phosphorescent moss. \r\n\r\nThe scene combines:\r\n\r\nScientific accuracy: Epiphytic ferns, strangler figs, and mycorrhizal networks visible in the understory\r\n\r\nCinematic lighting: Sunbeams scatter through suspended water droplets (Tyndall effect)\r\n\r\nTextural depth: Velvet moss, glistening pitcher plants, and fractal-like leaf patterns\r\n\r\nAtmosphere: Volumetric fog with subtle bioluminescent fungi (Armillaria spp.) glowing in the shadows\r\nRendered in 12K resolution with macro-lens detail, blending National Geographic realism with Thomas Cole\u2019s sublime landscapes. Color palette: Pantone 17-0230 TCX (Forest Biome), 19-0411 TCX (Deep Jungle), and metallic emerald highlights.\"*",
+        "image_url": "/static/images/Realisian_20250627_210645_853267.png",
+        "timestamp": "2025-06-27T21:07:04.025115"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A Renaissance-style library where books grow like living organisms from marble shelves, their pages unfolding into fractal geometries. Vermeer lighting with Da Vinci\u2019s sfumato technique, 16th-century engraving details combined with DNA helix motifs in the architecture. Ultra-high detail, Leon Battista Alberti perspective.",
+        "image_url": "/static/images/Realisian_20250627_205648_168405.png",
+        "timestamp": "2025-06-27T20:57:08.515319"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "An enchanted temperate rainforest where plants emit soft violet-blue bioluminescence, their glow synchronized with floating quantum energy patterns in the air. Hyper-realistic 12K resolution, shot on imaginary Hasselblad H7D with fractal lens technology.",
+        "image_url": "/static/images/Realisian_20250627_205122_218485.png",
+        "timestamp": "2025-06-27T20:51:38.424072"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A cyberpunk interpretation of a Renaissance-era alchemist's workshop. Imagine futuristic glowing alembics and circuits replacing traditional glass, with holographic projections of chemical formulas. The alchemist is a cyborg, with intricate mechanical limbs, intensely focused on a glowing, data-stream-infused philosopher's stone. Mood: Dark, moody, high-contrast chiaroscuro lighting with neon accents. Style: Digital painting, highly detailed, trending on ArtStation",
+        "image_url": "/static/images/Realisian_20250627_204853_902200.png",
+        "timestamp": "2025-06-27T20:49:10.586164"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A path through a glowing mushroom forest, bioluminescent plants, Studio Ghibli-inspired magical realism",
+        "image_url": "/static/images/Realisian_20250627_204316_971374.png",
+        "timestamp": "2025-06-27T20:43:34.318680"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A lone cabin in a valley of lavender fields, starry night sky, Vincent van Gogh color palette\"",
+        "image_url": "/static/images/Realisian_20250627_204152_105002.png",
+        "timestamp": "2025-06-27T20:42:09.022090"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "An ancient stone bridge over a crystal-clear river, autumn leaves floating on water, Japanese woodblock print style",
+        "image_url": "/static/images/Realisian_20250627_204000_362560.png",
+        "timestamp": "2025-06-27T20:40:17.628913"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A misty rainforest at dawn, sunlight filtering through dense canopy, vibrant green foliage, ultra-detailed 8K photography",
+        "image_url": "/static/images/Realisian_20250627_203855_952020.png",
+        "timestamp": "2025-06-27T20:39:11.900307"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "An underwater city made of iridescent coral and glowing jellyfish, bathed in soft, turquoise light filtering from the surface, schools of luminous fish swimming through ancient archways, serene, hyperrealistic, octane render.",
+        "image_url": "/static/images/Realisian_20250627_203030_533198.png",
+        "timestamp": "2025-06-27T20:32:23.261695"
+    },
+    {
+        "model": "Realisian",
+        "prompt": "A colossal library floating in the cosmos, infinite bookshelves stretching into a black hole vortex, illuminated by bioluminescent constellations, hyper-detailed 16K photorealism, cinematic god rays, unreal engine 5 rendering, intricate gothic architecture, by Simon St\u00e5lenhag and Beeple, volumetric light, quantum physics diagrams glowing in the air, surreal but scientifically plausible",
+        "image_url": "/static/images/Realisian_20250627_175912_323300.png",
+        "timestamp": "2025-06-27T17:59:35.631390"
+    }
+]

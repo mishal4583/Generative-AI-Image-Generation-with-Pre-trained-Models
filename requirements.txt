@@ -1,0 +1,6 @@
+Flask
+diffusers
+torch
+flask-executor
+accelerate # Often needed for diffusers, especially for GPU
+transformers

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGenr8 AI | AI Image Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="https://em-content.zobj.net/source/microsoft-teams/363/brain_1f9e0.png">
+</head>
+<body>
+    <div id="loader" class="loader-overlay" style="display: none;">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p id="loader-main-message">Generating image... Please wait</p>
+            <div class="progress-container">
+                <div id="loader-progress-bar" class="progress-bar"></div>
+            </div>
+            <p id="loader-status-message" class="status-message">Initializing model...</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1><span class="emoji">🧠</span> NeuroGenr8 AI</h1>
+        
+        <div id="error-message-display" class="error-message" style="display: none;">
+            ⚠️ <span id="error-message-text"></span>
+        </div>
+
+        <form method="POST" action="/generate" id="gen-form">
+            <label for="model">Model</label>
+            <select id="model" name="model" required>
+                <option value="Realisian" {% if model == 'Realisian' %}selected{% endif %}>Realisian</option>
+                <option value="Waifu" {% if model == 'Waifu' %}selected{% endif %}>Waifu Diffusion</option>
+                <option value="OrangeMix" {% if model == 'OrangeMix' %}selected{% endif %}>OrangeMix</option>
+            </select>
+
+            <label for="prompt">Prompt</label>
+            <textarea name="prompt" id="prompt" placeholder="Describe your image..." required maxlength="1000">{{ prompt if prompt is not none else '' }}</textarea>
+            <div class="char-counter"><span id="char-count">0</span>/1000</div>
+
+            <button type="button" id="surprise-btn" onclick="getRandomPrompt()">🎲 Surprise Me</button>
+
+            <label for="aspect_ratio">Aspect Ratio</label>
+            <select id="aspect_ratio" name="aspect_ratio" required>
+                <option value="512x512" {% if aspect_ratio == '512x512' %}selected{% endif %}>Square (512x512)</option>
+                <option value="768x512" {% if aspect_ratio == '768x512' %}selected{% endif %}>Wide (768x512)</option>
+                <option value="512x768" {% if aspect_ratio == '512x768' %}selected{% endif %}>Tall (512x768)</option>
+                <option value="custom" {% if aspect_ratio == 'custom' %}selected{% endif %}>Custom</option>
+            </select>
+
+            <div id="custom-size" style="display: none;">
+                <label for="width">Width</label>
+                <input type="number" id="width" name="width" min="256" max="1024" value="{% if width %}{{ width }}{% else %}512{% endif %}">
+                
+                <label for="height">Height</label>
+                <input type="number" id="height" name="height" min="256" max="1024" value="{% if height %}{{ height }}{% else %}512{% endif %}">
+            </div>
+
+            <button type="submit" id="generate-btn" class="generate-btn">🎨 Generate</button>
+        </form>
+
+        <div class="output-section">
+            <h2>🕒 Recent Generations</h2>
+            <div id="history-gallery" class="history-gallery">
+                <p>Loading history...</p>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h3>📊 Usage Stats</h3>
+            <ul id="stats-list">
+                <li>Loading stats...</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="caption" class="modal-caption"></div>
+        <a id="downloadButton" class="download-btn" href="#" download>⬇️ Download Image</a>
+    </div>
+
+    <script>
+        // Store prompts for surprise button
+        const prompts = [
+            "A high-resolution, photorealistic studio portrait of a young professional, soft key lighting from the left, shallow depth of field, neutral expression, subtle makeup, textured background, 8K quality, professional headshot.",
+            "Full-body anime character illustration of a cheerful schoolgirl, mid-stride, uniform fluttering slightly, vibrant blue eyes, short brown hair, in a bustling urban Japanese street setting, dynamic pose, detailed background, digital art, high quality animation style.",
+            "A fantastical landscape with an ethereal, glowing tree at its center, surrounded by a forest with leaves in vibrant shades of orange, deep red, and purple, subtle mist, painterly brushstrokes, warm ambient light, magical realism.",
+            "Cyberpunk cityscape at night with neon lights",
+            "Magical forest with glowing mushrooms and fairies",
+            "Surreal ocean sky with floating jellyfish",
+            "A robot reading a book in a library",
+            "Minimalist mountain range at sunrise"
+        ];
+
+        // --- DOM Elements ---
+        const promptInput = document.getElementById('prompt');
+        const charCount = document.getElementById('char-count');
+        const aspectRatioSelect = document.getElementById('aspect_ratio');
+        const customSizeDiv = document.getElementById('custom-size');
+        const generateForm = document.getElementById('gen-form');
+        const generateButton = document.getElementById('generate-btn');
+        const surpriseButton = document.getElementById('surprise-btn');
+        const loader = document.getElementById('loader');
+        const loaderMainMessage = document.getElementById('loader-main-message');
+        const loaderProgressBar = document.getElementById('loader-progress-bar');
+        const loaderStatusMessage = document.getElementById('loader-status-message');
+        const historyGallery = document.getElementById('history-gallery');
+        const statsList = document.getElementById('stats-list');
+        const errorMessageDisplay = document.getElementById('error-message-display');
+        const errorMessageText = document.getElementById('error-message-text');
+
+        // Modal elements
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const captionText = document.getElementById('caption');
+        const downloadButton = document.getElementById('downloadButton');
+
+
+        let progressInterval; // To store the interval ID for progress bar
+
+        // --- Helper Functions ---
+        function showLoader(mainMessage = "Generating image... Please wait", statusMessage = "Initializing model...") {
+            loaderMainMessage.textContent = mainMessage;
+            loaderStatusMessage.textContent = statusMessage;
+            loaderProgressBar.style.width = '0%'; // Reset progress bar
+            loader.style.display = 'flex';
+            generateButton.disabled = true;
+            surpriseButton.disabled = true;
+        }
+
+        function hideLoader() {
+            loader.style.display = 'none';
+            generateButton.disabled = false;
+            surpriseButton.disabled = false;
+            clearInterval(progressInterval); // Clear any running progress interval
+        }
+
+        function displayError(message) {
+            errorMessageText.textContent = message;
+            errorMessageDisplay.style.display = 'block';
+            setTimeout(() => {
+                errorMessageDisplay.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
+
+        // --- Dynamic Content Loaders ---
+        async function fetchAndRenderHistory() {
+            try {
+                const response = await fetch('/get-history');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const history = await response.json();
+                
+                historyGallery.innerHTML = ''; // Clear current history
+                if (history.length === 0) {
+                    historyGallery.innerHTML = '<p>No recent generations yet.</p>';
+                    return;
+                }
+
+                history.forEach(item => {
+                    const card = document.createElement('div');
+                    card.classList.add('history-card');
+
+                    const imageUrl = item.image_url ? item.image_url : "{{ url_for('static', filename='placeholder.png') }}";
+
+                    card.innerHTML = `
+                        <img src="${imageUrl}" alt="Generated Image" loading="lazy" 
+                             data-full-src="${imageUrl}" 
+                             data-prompt="${item.prompt}"
+                             onclick="openModal(this)">
+                        <p class="history-prompt">${item.prompt}</p>
+                        <div class="history-meta">
+                            <span>${item.model}</span>
+                            <span>${new Date(item.timestamp).toLocaleString()}</span>
+                        </div>
+                        <form class="delete-form" action="/delete-history" method="POST">
+                            <input type="hidden" name="image_url" value="${item.image_url || ''}">
+                            <button type="submit" class="delete-btn">🗑️ Delete</button>
+                        </form>
+                    `;
+                    historyGallery.appendChild(card);
+                });
+
+                // Re-attach event listeners for delete buttons (important after DOM update)
+                attachDeleteFormListeners();
+
+            } catch (error) {
+                console.error("Error fetching history:", error);
+                historyGallery.innerHTML = '<p style="color:red;">Failed to load history.</p>';
+            }
+        }
+
+        async function fetchAndRenderStats() {
+            try {
+                const response = await fetch('/get-stats');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const stats = await response.json();
+                
+                statsList.innerHTML = ''; // Clear current stats
+                
+                const totalLi = document.createElement('li');
+                totalLi.textContent = `Total generations: ${stats.total || 0}`;
+                statsList.appendChild(totalLi);
+
+                const models = ["Realisian", "Waifu", "OrangeMix"]; // Or fetch from server if dynamic
+                models.forEach(modelName => {
+                    if (modelName !== 'total') {
+                        const li = document.createElement('li');
+                        li.textContent = `${modelName}: ${stats[modelName] || 0}`;
+                        statsList.appendChild(li);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+                statsList.innerHTML = '<li style="color:red;">Failed to load stats.</li>';
+            }
+        }
+
+        // --- Event Handlers ---
+
+        // Character counter for prompt
+        promptInput.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+
+        // Toggle custom dimensions visibility
+        aspectRatioSelect.addEventListener('change', function() {
+            customSizeDiv.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Get random prompt
+        function getRandomPrompt() {
+            const rand = prompts[Math.floor(Math.random() * prompts.length)];
+            promptInput.value = rand;
+            charCount.textContent = rand.length;
+        }
+
+        // Handle generate form submission via AJAX
+        generateForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default full page reload
+
+            showLoader("Starting image generation..."); // Show loader
+
+            const formData = new FormData(generateForm); // Get form data
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log("Generation initiated:", result.message);
+                    loaderMainMessage.textContent = "Image generation in progress...";
+                    // Simulate progress: In a real-world scenario, you'd get real-time updates
+                    let progress = 0;
+                    const messages = [
+                        "Loading model components...",
+                        "Running inference steps...",
+                        "Applying post-processing...",
+                        "Finalizing image..."
+                    ];
+                    clearInterval(progressInterval); // Clear any old interval
+                    progressInterval = setInterval(() => {
+                        progress += 10;
+                        loaderProgressBar.style.width = `${Math.min(progress, 90)}%`;
+                        loaderStatusMessage.textContent = messages[Math.floor(progress / (100 / messages.length)) % messages.length]; // Cycle through messages
+                        if (progress >= 100) {
+                            clearInterval(progressInterval);
+                        }
+                    }, 800); // Update every 0.8 seconds
+
+                    // Poll for history update after a reasonable time (e.g., 5-10 seconds for initial check)
+                    // In a production app, consider Server-Sent Events or WebSockets for real-time completion
+                    setTimeout(async () => {
+                        loaderMainMessage.textContent = "Image generated!";
+                        loaderStatusMessage.textContent = "Updating history...";
+                        loaderProgressBar.style.width = '100%'; // Mark as complete
+                        await fetchAndRenderHistory();
+                        await fetchAndRenderStats();
+                        hideLoader();
+                    }, 10000); // Give it enough time to generate and save, then refresh (10 seconds)
+
+                } else {
+                    displayError(result.error);
+                    hideLoader();
+                }
+            } catch (error) {
+                console.error("Error during generation request:", error);
+                displayError("An unexpected error occurred during generation: " + error.message);
+                hideLoader();
+            }
+        });
+
+        // Attach event listeners to all delete forms
+        function attachDeleteFormListeners() {
+            document.querySelectorAll('.delete-form').forEach(form => {
+                // Ensure no duplicate listeners by removing first (safer than checking for existence)
+                form.removeEventListener('submit', handleDeleteSubmit); 
+                form.addEventListener('submit', handleDeleteSubmit);
+            });
+        }
+
+        // Handle delete form submission via AJAX
+        async function handleDeleteSubmit(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.currentTarget;
+            const imageUrlToDelete = form.querySelector('input[name="image_url"]').value;
+            
+            if (!imageUrlToDelete) {
+                displayError("Cannot delete: Image URL is missing.");
+                return;
+            }
+
+            // Optional: Add a confirmation dialog
+            if (!confirm("Are you sure you want to delete this image?")) {
+                return;
+            }
+
+            showLoader("Deleting image...", "Removing from history and disk...");
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log("Delete successful:", result.message);
+                    // Remove the card from the DOM directly for immediate feedback
+                    form.closest('.history-card').remove();
+                    // Then re-fetch to ensure the remaining history is accurate (especially for pagination/limits)
+                    await fetchAndRenderHistory(); // This will rebuild the history gallery
+                    await fetchAndRenderStats(); // Update stats as well
+                } else {
+                    console.error("Delete failed:", result.error);
+                    displayError("Failed to delete image: " + result.error);
+                }
+            } catch (error) {
+                console.error("Error during delete request:", error);
+                displayError("An error occurred while deleting the image: " + error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // --- Modal Functions ---
+        function openModal(imgElement) {
+            modalImage.src = imgElement.dataset.fullSrc;
+            captionText.textContent = imgElement.dataset.prompt;
+            
+            // Set download link
+            downloadButton.href = imgElement.dataset.fullSrc;
+            
+            // Set filename for download (extract from URL)
+            const urlParts = imgElement.dataset.fullSrc.split('/');
+            const filename = urlParts[urlParts.length - 1];
+            downloadButton.setAttribute('download', filename);
+
+            imageModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeModal() {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+            modalImage.src = ""; // Clear image src to free memory
+            captionText.textContent = "";
+            downloadButton.href = "";
+            downloadButton.removeAttribute('download');
+        }
+
+        // Close modal when clicking outside the image
+        window.onclick = function(event) {
+            if (event.target == imageModal) {
+                closeModal();
+            }
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set initial char count
+            charCount.textContent = promptInput.value.length;
+            
+            // Trigger change event to set custom size visibility on load
+            if (aspectRatioSelect) {
+                aspectRatioSelect.dispatchEvent(new Event('change'));
+            }
+
+            // Load initial history and stats
+            await fetchAndRenderHistory();
+            await fetchAndRenderStats();
+
+            // Set up a periodic refresh for history and stats
+            // It's generally better to refresh only on actions (generate, delete)
+            // but if you want frequent updates, keep these intervals.
+            // Be mindful of server load if set too low.
+            // setInterval(fetchAndRenderHistory, 10000); // Every 10 seconds
+            // setInterval(fetchAndRenderStats, 10000); // Every 10 seconds
+        });
+
+    </script>
+</body>
+</html>
