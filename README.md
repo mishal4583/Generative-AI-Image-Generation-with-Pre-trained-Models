@@ -1,4 +1,5 @@
-🧠 Stable Diffusion Image Generator – Task 2
+🧠 Image-Generation-with-Pre-trained-Models
+
 
 Welcome to Task 2 of the Generative AI Internship at Prodigy InfoTech! This project is a Flask-based Image Generation Web App using the Stable Diffusion model via Hugging Face Diffusers. It provides a user-friendly interface to generate AI-powered images based on prompts.
 
